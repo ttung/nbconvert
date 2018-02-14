@@ -222,6 +222,7 @@ if 'setuptools' in sys.modules:
             'pdf=nbconvert.exporters:PDFExporter',
             'markdown=nbconvert.exporters:MarkdownExporter',
             'python=nbconvert.exporters:PythonExporter',
+            'encoded_python=nbconvert.exporters:EncodedPythonExporter',
             'rst=nbconvert.exporters:RSTExporter',
             'notebook=nbconvert.exporters:NotebookExporter',
             'asciidoc=nbconvert.exporters:ASCIIDocExporter',

@@ -10,6 +10,7 @@ from .asciidoc import ASCIIDocExporter
 from .notebook import NotebookExporter
 from .pdf import PDFExporter
 from .python import PythonExporter
+from .encoded_python import EncodedPythonExporter
 from .rst import RSTExporter
 from .exporter import Exporter, FilenameExtension
 from .script import ScriptExporter
