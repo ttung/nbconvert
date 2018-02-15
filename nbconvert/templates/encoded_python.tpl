@@ -8,15 +8,13 @@
 {% endblock header %}
 
 {% block input %}
-{% set block_uuid = resources.encoded_python_uuid_generator() %}
-# EPY: START CODE {{ block_uuid }}
-{{ cell.source | ipython2encodedpython(block_uuid) }}
-# EPY: END CODE {{ block_uuid }}
+# EPY: START code
+{{ cell.source | ipython2encodedpython -}}
+# EPY: END code
 {% endblock input %}
 
 {% block markdowncell scoped %}
-{% set block_uuid = resources.encoded_python_uuid_generator() %}
-# EPY: START MARKDOWN {{ block_uuid }}
-{{ cell.source | comment_lines }}
-# EPY: END MARKDOWN {{ block_uuid }}
+# EPY: START markdown
+{{ cell.source | comment_lines_with_escaping }}
+# EPY: END markdown
 {% endblock markdowncell %}

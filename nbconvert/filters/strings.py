@@ -33,6 +33,7 @@ __all__ = [
     'strip_dollars',
     'strip_files_prefix',
     'comment_lines',
+    'comment_lines_with_escaping',
     'get_lines',
     'ipython2python',
     'ipython2encodedpython',
@@ -169,7 +170,34 @@ def comment_lines(text, prefix='# '):
     #Replace line breaks with line breaks and comment symbols.
     #Also add a comment symbol at the beginning to comment out
     #the first line.
-    return prefix + ('\n'+prefix).join(text.split('\n')) 
+    return prefix + ('\n'+prefix).join(text.split('\n'))
+
+
+def comment_lines_with_escaping(
+        text,
+        prefix='# ',
+        escape_prefix="# EPY",
+        escape_format_string="# EPY: ESCAPE {}"):
+    """
+    Build a Python comment line from input text.
+
+    Parameters
+    ----------
+    text : str
+        Text to comment out.
+    prefix : str
+        Character to append to the start of each line.
+    """
+    def escape_if_necessary(line):
+        if line.startswith(escape_prefix):
+            return escape_format_string.format(line)
+        else:
+            return "{}{}".format(prefix, line)
+
+    splitlines = [
+        escape_if_necessary(line)
+        for line in text.splitlines()]
+    return "\n".join(splitlines)
 
 
 def get_lines(text, start=None,end=None):
@@ -214,21 +242,19 @@ def ipython2python(code):
         isp = IPythonInputSplitter(line_input_checker=False)
         return isp.transform_cell(code)
 
-def ipython2encodedpython(code, block_uuid):
+def ipython2encodedpython(code):
     def tweak_transform(orig_transform):
         """
         Takes the transform and modifies it such that we compare each line to its transformation.  If they are
         different, that means the line is a special ipython command.  We strip that from the output, but record the
         special command in a comment so we can restore it.
-        :param orig_transform:
-        :return:
         """
         def new_push_builder(push_func):
             def new_push(line):
                 result = push_func(line)
 
                 if line != result:
-                    return "# EPY: TRANSFORM {} {}".format(block_uuid, line)
+                    return "# EPY: ESCAPE {}".format(line)
 
                 return result
             return new_push
@@ -236,6 +262,14 @@ def ipython2encodedpython(code, block_uuid):
         orig_transform.push = functools.update_wrapper(new_push_builder(orig_transform.push), orig_transform.push)
 
         return orig_transform
+
+    from IPython.core.inputtransformer import StatelessInputTransformer
+    @StatelessInputTransformer.wrap
+    def escaped_epy_lines(line):
+        """Transform lines that happen to look like EPY comments."""
+        if line.startswith("# EPY"):
+            return "# EPY: ESCAPE {}".format(line)
+        return line
 
     """Transform IPython syntax to an encoded Python syntax
 
@@ -249,10 +283,12 @@ def ipython2encodedpython(code, block_uuid):
 
     # get a list of default line transforms.  then capture
     fake_isp = IPythonInputSplitter(line_input_checker=False)
-    logical_line_transforms = [tweak_transform(transform) for transform in fake_isp.logical_line_transforms]
+    logical_line_transforms = [escaped_epy_lines()]
+    logical_line_transforms.extend([tweak_transform(transform) for transform in fake_isp.logical_line_transforms])
 
     isp = IPythonInputSplitter(line_input_checker=False, logical_line_transforms=logical_line_transforms)
-    return isp.transform_cell(code)
+    result = isp.transform_cell(code)
+    return result
 
 def posix_path(path):
     """Turn a path into posix-style path/to/etc

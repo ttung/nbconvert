@@ -4,7 +4,7 @@
 # Distributed under the terms of the Modified BSD License.
 
 import copy
-import uuid
+import json
 
 from traitlets import default
 
@@ -14,7 +14,7 @@ from .templateexporter import TemplateExporter
 def strip_cells(notebook):
     clone = copy.deepcopy(notebook)
     del clone['cells']
-    return clone
+    return json.dumps(clone)
 
 
 class EncodedPythonExporter(TemplateExporter):
@@ -31,7 +31,6 @@ class EncodedPythonExporter(TemplateExporter):
 
     def _init_resources(self, resources=None):
         resources = super(EncodedPythonExporter, self)._init_resources(resources)
-        resources['encoded_python_uuid_generator'] = uuid.uuid4
         resources['strip_cells'] = strip_cells
         return resources
 
