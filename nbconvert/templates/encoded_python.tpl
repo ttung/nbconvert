@@ -10,7 +10,7 @@
 {% block input %}
 {% set block_uuid = resources.encoded_python_uuid_generator() %}
 # EPY: START CODE {{ block_uuid }}
-{{ cell.source | ipython2python }}
+{{ cell.source | ipython2encodedpython(block_uuid) }}
 # EPY: END CODE {{ block_uuid }}
 {% endblock input %}
 

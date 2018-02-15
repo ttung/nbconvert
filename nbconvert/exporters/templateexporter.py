@@ -36,6 +36,7 @@ default_filters = {
         'highlight2html': filters.Highlight2HTML,
         'highlight2latex': filters.Highlight2Latex,
         'ipython2python': filters.ipython2python,
+        'ipython2encodedpython': filters.ipython2encodedpython,
         'posix_path': filters.posix_path,
         'markdown2latex': filters.markdown2latex,
         'markdown2rst': filters.markdown2rst,

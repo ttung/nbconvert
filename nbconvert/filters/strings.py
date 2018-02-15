@@ -8,6 +8,7 @@ templates.
 # Copyright (c) IPython Development Team.
 # Distributed under the terms of the Modified BSD License.
 
+import functools
 import os
 import re
 import textwrap
@@ -34,6 +35,7 @@ __all__ = [
     'comment_lines',
     'get_lines',
     'ipython2python',
+    'ipython2encodedpython',
     'posix_path',
     'path2url',
     'add_prompts',
@@ -211,6 +213,46 @@ def ipython2python(code):
     else:
         isp = IPythonInputSplitter(line_input_checker=False)
         return isp.transform_cell(code)
+
+def ipython2encodedpython(code, block_uuid):
+    def tweak_transform(orig_transform):
+        """
+        Takes the transform and modifies it such that we compare each line to its transformation.  If they are
+        different, that means the line is a special ipython command.  We strip that from the output, but record the
+        special command in a comment so we can restore it.
+        :param orig_transform:
+        :return:
+        """
+        def new_push_builder(push_func):
+            def new_push(line):
+                result = push_func(line)
+
+                if line != result:
+                    return "# EPY: TRANSFORM {} {}".format(block_uuid, line)
+
+                return result
+            return new_push
+
+        orig_transform.push = functools.update_wrapper(new_push_builder(orig_transform.push), orig_transform.push)
+
+        return orig_transform
+
+    """Transform IPython syntax to an encoded Python syntax
+
+    Parameters
+    ----------
+
+    code : str
+        IPython code, to be transformed to Python encoded in a way to facilitate transformation back into IPython.
+    """
+    from IPython.core.inputsplitter import IPythonInputSplitter
+
+    # get a list of default line transforms.  then capture
+    fake_isp = IPythonInputSplitter(line_input_checker=False)
+    logical_line_transforms = [tweak_transform(transform) for transform in fake_isp.logical_line_transforms]
+
+    isp = IPythonInputSplitter(line_input_checker=False, logical_line_transforms=logical_line_transforms)
+    return isp.transform_cell(code)
 
 def posix_path(path):
     """Turn a path into posix-style path/to/etc
